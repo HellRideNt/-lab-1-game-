@@ -20,18 +20,49 @@ void info() {
 //====================================================================================================================
 int main()
 { 
-    info();
+    
     int numbering1;
     int added_time=0;
     int current_day = 1;
     int current_hour = 8;
     int inventory = 10;
 
-
-
-
-  //======================================================================================================================  
+//======================================================================================================================  
 // Тело Игры 
+while(1) { 
+    info();
+    
+scanf("%d", &numbering1);
+switch (numbering1) {
+case 1:
+    printf("Результат:\n");
+    printf("День %d - %d:00 \n",current_day,current_hour);
+    break;
+case 2:
+    printf("На сколько вы бы хотели промотать время\n");
+    scanf("%d", &added_time);
+    current_hour=current_hour+added_time;
+    if (current_hour <= 23){
+        printf("День %d - %d:00\n",current_day,current_hour);
+     }else {
+        current_day+=1;
+        current_hour=current_hour-24;
+        printf("День %d - %d:00\n",current_day,current_hour);
+        break;
+    }
+case 0:
+    printf("Игра завершена.\nПока - пока!\n");
+    return 0;
+
+default:
+printf("Неверный ввод. Попробуйте снова!\n");
+
+}
+}
+
+
+
+
 
 
  return 0; 
