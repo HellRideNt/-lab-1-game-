@@ -39,6 +39,7 @@ int current_day = 1;
 int current_hour = 8;
 int item_id;
 int index_slot;
+int slot;
 
 //Это значит у нас функция которая выводит слоты===============================================
 void print_inventory(const int inventory[],int size) {
@@ -53,7 +54,7 @@ void print_inventory(const int inventory[],int size) {
     } else if (item_id >=1 && item_id <=9) {
         printf("Слот %2d: [ID: %d] %s\n", i, item_id, item_names[item_id]);
     } else {
-        printf("Cлот %2d: [ID:%d] Неизвсетный предмет\n", i, item_id);
+        printf("Cлот %2d: [ID:%d] Неизвеcтный предмет\n", i, item_id);
     }
 }
 printf("=====================================================================\n");
@@ -85,16 +86,17 @@ case 1:
     printf("День %d - %d:00 \n",current_day,current_hour);
 break;
 case 2:
-    printf("На сколько вы бы хотели промотать время\n");
-    scanf("%d", &added_time);
-    current_hour=current_hour+added_time;
-    if (current_hour <= 23){
-        printf("День %d - %d:00\n",current_day,current_hour);
-     }else {
-        current_day+=1;
-        current_hour=current_hour-24;
-        printf("День %d - %d:00\n",current_day,current_hour);
+    printf("На сколько вы бы хотели промотать время: \n");
+    if (scanf("%d", &added_time) != 1 || added_time < 0) {
+        printf("Ошибка: введите положительное число часов!\n");
+        while (getchar() != '\n');
+        break;
     }
+    current_hour += added_time;
+
+    current_day += current_hour / 24;
+    current_hour = current_hour % 24;
+    printf("День %d - %02d:00\n", current_day, current_hour);
 break;
 case 3:
     print_inventory(inventory,inventory_size);
@@ -112,6 +114,24 @@ case 4:
         printf("Предмет успешно добавлен в слот %d\n",index_slot);
     }
 break;
+case 5:
+    printf("Введите индекс слота предмета, который хотели бы выбросить (от 0 до %d): \n", inventory_size - 1);
+    if (scanf("%d", &index_slot) != 1) {
+        printf("Ошибка ввода! Введите число.\n");
+        while (getchar() != '\n'); 
+        break;
+    }
+    if (index_slot < 0 || index_slot >= inventory_size) {
+        printf("Ошибка: слот с индексом %d не существует!\n", index_slot);
+break;
+    }
+    if (inventory[index_slot] == 0) {
+        printf("Слот %d уже пуст.\n", index_slot);
+break;
+    }
+    printf("Предмет с ID %d выброшен из слота %d.\n", inventory[index_slot], index_slot);
+    inventory[index_slot]=0;
+break;
 
 case 0:
     printf("Игра завершена.\nПока - пока!\n");
@@ -123,8 +143,3 @@ default:
 }
  return 0; 
 }
-
-
-
-
-
