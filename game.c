@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#define inventory_size 10
+#define inventory_size 10 
 // Функция для информации
 
 void info() {
@@ -10,7 +10,7 @@ void info() {
     printf("[3] Посмотреть инвентарь\n");
     printf("[4] Положить предмет в слот\n");
     printf("[5] Выбросить предмет \n");
-    printf("[6] Инверсия предметов\n");
+    printf("[6] Поиск тяжестей\n");
     printf("[0] Завершение программы\n");
     printf("================================================================\n");
     printf("Выберите цифру которая соответсвует вашему запросу:\n");
@@ -134,19 +134,32 @@ break;
     inventory[index_slot]=0;   
 break;
 //==========
-case 6:
-    printf("===================Инвентарь до переворота======================\n\n");
-    print_inventory(inventory, inventory_size);
-    for (int i = 0; i < inventory_size / 2; i++) {
-        int opposite_index = inventory_size - 1 - i;
-        int temp = inventory[i];
-        inventory[i] = inventory[opposite_index];
-        inventory[opposite_index] = temp;
-    }
-    printf("===================Инвентарь после переворота===================\n\n");
-    print_inventory(inventory, inventory_size);
-    printf("Инвентарь успешно перевернут!\n\n\n");
-break;
+case 6: {
+    int input_id;
+    int found_count = 0;
+    
+    printf("Введите пороговый ID предмета (a): \n");
+    if (scanf("%d", &input_id) != 1) {
+                printf("Ошибка ввода! Введите число.\n\n\n");
+                while (getchar() != '\n');
+                break;
+            }
+
+            printf("Слоты с предметами, чей ID строго больше %d:\n", input_id);
+            for (int i = 0; i < inventory_size; i++) {
+                if (inventory[i] > input_id) {
+                    printf("- Слот %d: ID %d (%s)\n", i, inventory[i],
+                           (inventory[i] <= 9) ? item_names[inventory[i]] : "Неизвестный предмет");
+                    found_count++;
+                }
+            }
+
+            if (found_count == 0) {
+                printf("Подходящих предметов не найдено.\n");
+            }
+            printf("\n\n");
+            break;
+}
 //==========
 case 0:
     printf("Игра завершена\nПока - пока:)");
