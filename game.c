@@ -20,6 +20,9 @@
 #define CELL_ROCK  'R'
 #define CELL_RUNE  '^'
 #define CELL_HERO  '@'
+#define OBSTACLE_MIN_PERCENT 15
+#define OBSTACLE_MAX_PERCENT 30
+#define PERCENT_TOTAL 100
 
 
 // Функция которая чистит буфер от всякой каки
@@ -54,6 +57,7 @@ void info() {
     printf("[8] Записать состояние в дневник фермера\n");
     printf("[9] Проверить рецепты крафта \n");
     printf("[0] Завершение программы\n");
+    printf("[10] Отправиться в приключение\n");
     printf("================================================================\n");
     printf("Выберите пункт меню: ");
 }
@@ -369,7 +373,7 @@ void check_crafting_recipes(const int inventory[], int size) {
     printf("[Готово] Результаты крафта сохранены в output.txt\n\n");
 }
 
-//Создание карты в динамической памяти[10]==========================================================
+//Создание карты в динамической памяти==========================================================
 char **create_map(int height, int width) {
     char **map = (char**)malloc(height * sizeof(char*));
     if (map == NULL) {
@@ -388,7 +392,7 @@ char **create_map(int height, int width) {
     return map;
 }
 
-//Освобождение памяти карты[10]=====================================================================
+//Освобождение памяти карты=====================================================================
 void free_map(char **map, int height) {
     if (map == NULL) {
         return;
@@ -398,9 +402,58 @@ void free_map(char **map, int height) {
     }
     free(map);
 }
+//Случайное число от min до max включительно======================================================
+int random_range(int min, int max) {
+    return min + rand() % (max - min + 1);
+}
+
+//Генерация карты: стены по краям, внутри пол и препятствия=======================================
+void generate_map(char **map, int height, int width) {
+    int obstacle_chance = random_range(OBSTACLE_MIN_PERCENT, OBSTACLE_MAX_PERCENT);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (y == 0 || y == height - 1 || x == 0 || x == width - 1) {
+                map[y][x] = CELL_WALL;
+            } else if (rand() % PERCENT_TOTAL < obstacle_chance) {
+                map[y][x] = (rand() % 2 == 0) ? CELL_TREE : CELL_ROCK;
+            } else {
+                map[y][x] = CELL_FLOOR;
+            }
+        }
+    }
+}
+
+//Отрисовка карты==================================================================================
+void draw_map(char **map, int height, int width) {
+    printf("\n");
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            printf("%c ", map[y][x]);
+        }
+        printf("\n");
+    }
+}
+//летсгоу в приключение
+void adventure(void) {
+    int height = random_range(MAP_MIN_SIZE, MAP_MAX_SIZE);
+    int width = random_range(MAP_MIN_SIZE, MAP_MAX_SIZE);
+    char **map = create_map(height, width);
+    if (map == NULL) {
+        printf("Ошибка: не удалось выделить память под карту!\n\n");
+        return;
+    }
+    generate_map(map, height, width);
+    printf("\nРазмер карты: %d x %d\n", width, height);
+    draw_map(map, height, width);
+    free_map(map, height);
+    map = NULL;
+    printf("Память карты освобождена.\n\n");
+}
+
 //====================================================================================================================
 int main()
 { char current_path[1024];
+    srand((unsigned int)time(NULL));
     printf("================================================================\n");
     if (get_current_dir(current_path, sizeof(current_path)) != NULL) {
         printf("ТОЧНЫЙ ПУТЬ К ПАПКЕ ПРОГРАММЫ:\n%s\n", current_path);
@@ -468,6 +521,10 @@ case 0:
     printf("Игра завершена\nПока - пока:)");
     return 0;
 //==========
+case 10:
+    adventure();
+    break;
+//=========
 default:
     printf("Неверный ввод. Попробуйте снова!\n\n\n");
 }
