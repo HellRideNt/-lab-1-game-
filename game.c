@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 #ifdef _WIN32
     #include <direct.h>
     #define get_current_dir _getcwd
@@ -10,6 +12,14 @@
 #define inventory_size 10 
 #define MAX_NAME_LEN 32
 #define MAX_ITEMS 10
+#define MAP_MIN_SIZE 5
+#define MAP_MAX_SIZE 30
+#define CELL_WALL  '#'
+#define CELL_FLOOR '.'
+#define CELL_TREE  'T'
+#define CELL_ROCK  'R'
+#define CELL_RUNE  '^'
+#define CELL_HERO  '@'
 
 
 // Функция которая чистит буфер от всякой каки
@@ -68,6 +78,7 @@ for (int i = 0; i < MAX_ITEMS; i++) {
     item_names[i][MAX_NAME_LEN - 1] = '\0';
 }
 }
+
 //Загрузка каталога из items.txt=======================================================================
 void load_items_from_file() {
     FILE *file = fopen("items.txt", "r");
@@ -358,6 +369,35 @@ void check_crafting_recipes(const int inventory[], int size) {
     printf("[Готово] Результаты крафта сохранены в output.txt\n\n");
 }
 
+//Создание карты в динамической памяти[10]==========================================================
+char **create_map(int height, int width) {
+    char **map = (char**)malloc(height * sizeof(char*));
+    if (map == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < height; i++) {
+        map[i] = (char*)malloc(width * sizeof(char));
+        if (map[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(map[j]);
+            }
+            free(map);
+            return NULL;
+        }
+    }
+    return map;
+}
+
+//Освобождение памяти карты[10]=====================================================================
+void free_map(char **map, int height) {
+    if (map == NULL) {
+        return;
+    }
+    for (int i = 0; i < height; i++) {
+        free(map[i]);
+    }
+    free(map);
+}
 //====================================================================================================================
 int main()
 { char current_path[1024];
