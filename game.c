@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
 #ifdef _WIN32
     #include <direct.h>
     #define get_current_dir _getcwd
@@ -23,6 +24,12 @@
 #define OBSTACLE_MIN_PERCENT 15
 #define OBSTACLE_MAX_PERCENT 30
 #define PERCENT_TOTAL 100
+#define INPUT_LINE_LEN 32
+#define KEY_UP    'W'
+#define KEY_LEFT  'A'
+#define KEY_DOWN  'S'
+#define KEY_RIGHT 'D'
+#define KEY_QUIT  'Q'
 
 
 // Функция которая чистит буфер от всякой каки
@@ -56,8 +63,8 @@ void info() {
     printf("[7] Поиск предмета в рюкзаке по названию\n");
     printf("[8] Записать состояние в дневник фермера\n");
     printf("[9] Проверить рецепты крафта \n");
-    printf("[0] Завершение программы\n");
     printf("[10] Отправиться в приключение\n");
+    printf("[0] Завершение программы\n");
     printf("================================================================\n");
     printf("Выберите пункт меню: ");
 }
@@ -423,18 +430,115 @@ void generate_map(char **map, int height, int width) {
     }
 }
 
-//Отрисовка карты==================================================================================
-void draw_map(char **map, int height, int width) {
+//Поиск случайной свободной клетки======================================================================
+int pick_random_free_cell(char **map, int height, int width, int *out_x, int *out_y) {
+    int free_count = 0;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (map[y][x] == CELL_FLOOR) {
+                free_count++;
+            }
+        }
+    }
+    if (free_count == 0) {
+        return 0;
+    }
+    int target = rand() % free_count;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (map[y][x] == CELL_FLOOR) {
+                if (target == 0) {
+                    *out_x = x;
+                    *out_y = y;
+                    return 1;
+                }
+                target--;
+            }
+        }
+    }
+    return 0;
+}
+//Отрисовка карты с героем==========================================================================
+void draw_map(char **map, int height, int width, int hero_x, int hero_y) {
     printf("\n");
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            printf("%c ", map[y][x]);
+            if (x == hero_x && y == hero_y) {
+                printf("%c ", CELL_HERO);
+            } else {
+                printf("%c ", map[y][x]);
+            }
         }
         printf("\n");
     }
+    printf("%c - вы, %c - стена, %c - дерево, %c - камень\n",
+           CELL_HERO, CELL_WALL, CELL_TREE, CELL_ROCK);
 }
+//Ввод направления с защитой от дурака===============================================================
+char read_direction(void) {
+    char line[INPUT_LINE_LEN];
+    while (1) {
+        printf("Куда идём? (%c - вверх, %c - влево, %c - вниз, %c - вправо, %c - сбежать домой): ",
+               KEY_UP, KEY_LEFT, KEY_DOWN, KEY_RIGHT, KEY_QUIT);
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            return KEY_QUIT;
+        }
+        if (strchr(line, '\n') == NULL) {
+            clear_input_buffer();
+        }
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strlen(line) == 1) {
+            char key = (char)toupper((unsigned char)line[0]);
+            if (key == KEY_UP || key == KEY_LEFT || key == KEY_DOWN ||
+                key == KEY_RIGHT || key == KEY_QUIT) {
+                return key;
+            }
+        }
+        printf("Неверный ввод! Введите одну букву: W, A, S, D или Q.\n");
+    }
+}
+
+//Можно ли наступить на клетку=======================================================================
+int is_passable(char cell) {
+    return cell == CELL_FLOOR;
+}
+
+//Название препятствия================================================================================
+const char *obstacle_name(char cell) {
+    switch (cell) {
+        case CELL_WALL: return "стена";
+        case CELL_TREE: return "дерево";
+        case CELL_ROCK: return "камень";
+        default:        return "препятствие";
+    }
+}
+
+//Перемещение героя с проверками=====================================================================
+void move_hero(char **map, int height, int width, int *hero_x, int *hero_y, char direction) {
+    int new_x = *hero_x;
+    int new_y = *hero_y;
+    switch (direction) {
+        case KEY_UP:    new_y--; break;
+        case KEY_DOWN:  new_y++; break;
+        case KEY_LEFT:  new_x--; break;
+        case KEY_RIGHT: new_x++; break;
+        default:        return;
+    }
+    if (new_x < 0 || new_x >= width || new_y < 0 || new_y >= height) {
+        printf("Дальше дороги нет — край карты!\n");
+        return;
+    }
+    if (!is_passable(map[new_y][new_x])) {
+        printf("Туда нельзя: там %s!\n", obstacle_name(map[new_y][new_x]));
+        return;
+    }
+    *hero_x = new_x;
+    *hero_y = new_y;
+}
+
 //летсгоу в приключение
 void adventure(void) {
+    clear_input_buffer();
     int height = random_range(MAP_MIN_SIZE, MAP_MAX_SIZE);
     int width = random_range(MAP_MIN_SIZE, MAP_MAX_SIZE);
     char **map = create_map(height, width);
@@ -443,12 +547,26 @@ void adventure(void) {
         return;
     }
     generate_map(map, height, width);
-    printf("\nРазмер карты: %d x %d\n", width, height);
-    draw_map(map, height, width);
+    int hero_x = 1;
+    int hero_y = 1;
+    if (!pick_random_free_cell(map, height, width, &hero_x, &hero_y)) {
+        map[hero_y][hero_x] = CELL_FLOOR;
+    }
+    printf("\nВы отправились в приключение! Размер карты: %d x %d\n", width, height);
+    while (1) {
+        draw_map(map, height, width, hero_x, hero_y);
+        char direction = read_direction();
+        if (direction == KEY_QUIT) {
+            break;
+        }
+        move_hero(map, height, width, &hero_x, &hero_y, direction);
+    }
     free_map(map, height);
     map = NULL;
-    printf("Память карты освобождена.\n\n");
+    printf("Вы сбежали домой. Память карты освобождена.\n\n");
 }
+
+
 
 //====================================================================================================================
 int main()
