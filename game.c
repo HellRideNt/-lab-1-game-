@@ -47,6 +47,7 @@ int current_day = 1;
 int current_hour = 8;
 int item_id;
 int index_slot;
+int map_blocks_allocated = 0;
 
 
 // Функция для информации
@@ -387,15 +388,19 @@ char **create_map(int height, int width) {
     if (map == NULL) {
         return NULL;
     }
+    map_blocks_allocated++;
     for (int i = 0; i < height; i++) {
         map[i] = (char*)malloc(width * sizeof(char));
         if (map[i] == NULL) {
             for (int j = 0; j < i; j++) {
                 free(map[j]);
+                map_blocks_allocated--;
             }
             free(map);
+            map_blocks_allocated--;
             return NULL;
         }
+        map_blocks_allocated++;
     }
     return map;
 }
@@ -407,9 +412,12 @@ void free_map(char **map, int height) {
     }
     for (int i = 0; i < height; i++) {
         free(map[i]);
+        map_blocks_allocated--;
     }
     free(map);
+    map_blocks_allocated--;
 }
+
 //Случайное число от min до max включительно======================================================
 int random_range(int min, int max) {
     return min + rand() % (max - min + 1);
@@ -576,6 +584,7 @@ void adventure(void) {
         map[hero_y][hero_x] = CELL_FLOOR;
     }
     printf("\nВы отправились в приключение! Размер карты: %d x %d\n", width, height);
+    printf("Выделено блоков под карту: %d\n", map_blocks_allocated);
     while (1) {
         draw_map(map, height, width, hero_x, hero_y);
         char direction = read_direction();
@@ -586,7 +595,7 @@ void adventure(void) {
     }
     free_map(map, height);
     map = NULL;
-    printf("Вы сбежали домой. Память карты освобождена.\n\n");
+    printf("Вы сбежали домой.\n Карта освобождена, занятых блоков осталось: %d\n\n",map_blocks_allocated);
 }
 
 
