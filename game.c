@@ -24,6 +24,7 @@
 #define OBSTACLE_MIN_PERCENT 15
 #define OBSTACLE_MAX_PERCENT 30
 #define PERCENT_TOTAL 100
+#define RUNE_PERCENT 5
 #define INPUT_LINE_LEN 32
 #define KEY_UP    'W'
 #define KEY_LEFT  'A'
@@ -421,8 +422,13 @@ void generate_map(char **map, int height, int width) {
         for (int x = 0; x < width; x++) {
             if (y == 0 || y == height - 1 || x == 0 || x == width - 1) {
                 map[y][x] = CELL_WALL;
-            } else if (rand() % PERCENT_TOTAL < obstacle_chance) {
+                continue;
+            }
+            int roll = rand() % PERCENT_TOTAL;
+            if (roll < obstacle_chance) {
                 map[y][x] = (rand() % 2 == 0) ? CELL_TREE : CELL_ROCK;
+            } else if (roll < obstacle_chance + RUNE_PERCENT) {
+                map[y][x] = CELL_RUNE;
             } else {
                 map[y][x] = CELL_FLOOR;
             }
@@ -471,8 +477,8 @@ void draw_map(char **map, int height, int width, int hero_x, int hero_y) {
         }
         printf("\n");
     }
-    printf("%c - вы, %c - стена, %c - дерево, %c - камень\n",
-           CELL_HERO, CELL_WALL, CELL_TREE, CELL_ROCK);
+    printf("%c - вы, %c - стена, %c - дерево, %c - камень, %c - руна-телепорт\n",
+           CELL_HERO, CELL_WALL, CELL_TREE, CELL_ROCK, CELL_RUNE);
 }
 //Ввод направления с защитой от дурака===============================================================
 char read_direction(void) {
@@ -500,7 +506,7 @@ char read_direction(void) {
 
 //Можно ли наступить на клетку=======================================================================
 int is_passable(char cell) {
-    return cell == CELL_FLOOR;
+    return cell == CELL_FLOOR || cell == CELL_RUNE;
 }
 
 //Название препятствия================================================================================
@@ -510,6 +516,21 @@ const char *obstacle_name(char cell) {
         case CELL_TREE: return "дерево";
         case CELL_ROCK: return "камень";
         default:        return "препятствие";
+    }
+}
+
+//Вариант 7: руна-телепорт=========================================================================
+void teleport_hero(char **map, int height, int width, int *hero_x, int *hero_y) {
+    int new_x = *hero_x;
+    int new_y = *hero_y;
+    int found = pick_random_free_cell(map, height, width, &new_x, &new_y);
+    map[*hero_y][*hero_x] = CELL_FLOOR;
+    if (found) {
+        *hero_x = new_x;
+        *hero_y = new_y;
+        printf("Руна вспыхнула и исчезла! Вас перенесло на клетку (%d, %d).\n", new_x, new_y);
+    } else {
+        printf("Руна погасла, но свободных клеток для телепорта нет.\n");
     }
 }
 
@@ -534,8 +555,10 @@ void move_hero(char **map, int height, int width, int *hero_x, int *hero_y, char
     }
     *hero_x = new_x;
     *hero_y = new_y;
+    if (map[new_y][new_x] == CELL_RUNE) {
+        teleport_hero(map, height, width, hero_x, hero_y);
+    }
 }
-
 //летсгоу в приключение
 void adventure(void) {
     clear_input_buffer();
