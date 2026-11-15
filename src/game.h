@@ -5,6 +5,8 @@
 #define ITEM_NAME_SIZE 32
 #define ITEMS_COUNT 10
 #define INVENTORY_SIZE 10
+#define NIGHT_HOUR 2
+#define MORNING_HOUR 8
 
 typedef enum {
     HOUSE_TENT = 0,

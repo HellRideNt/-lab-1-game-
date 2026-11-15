@@ -7,9 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NIGHT_HOUR 2
-
-static int read_int(const char *prompt, int *value) {
+int read_int(const char *prompt, int *value) {
     char line[64];
     char *end;
     long number;
@@ -51,6 +49,61 @@ static int read_int(const char *prompt, int *value) {
     return 1;
 }
 
+void read_text(const char *prompt, char *text, int size) {
+    printf("%s", prompt);
+
+    if (fgets(text, size, stdin) == NULL) {
+        text[0] = '\0';
+        return;
+    }
+
+    if (strchr(text, '\n') == NULL && !feof(stdin)) {
+        int symbol;
+        while ((symbol = getchar()) != '\n' && symbol != EOF) {
+        }
+        text[0] = '\0';
+        printf("Введённый текст слишком длинный.\n");
+        return;
+    }
+
+    text[strcspn(text, "\r\n")] = '\0';
+}
+
+void load_item_names(GameState *game) {
+    const char *defaults[ITEMS_COUNT] = {
+        "Пусто", "Дерево", "Камень", "Семена_пшеницы", "Меч",
+        "Каменная_кирка", "Яблоко", "Факел", "Туалетная_бумага", "Вода"
+    };
+    int loaded[ITEMS_COUNT] = {0};
+    int id;
+    char name[ITEM_NAME_SIZE];
+    FILE *file;
+
+    for (int i = 0; i < ITEMS_COUNT; i++) {
+        snprintf(game->item_names[i], ITEM_NAME_SIZE, "%s", defaults[i]);
+    }
+
+    file = fopen("items.txt", "r");
+    if (file == NULL) {
+        printf("[Внимание] Файл items.txt не найден! Использованы названия по умолчанию.\n");
+        return;
+    }
+
+    while (fscanf(file, "%d %31s", &id, name) == 2) {
+        if (id >= 0 && id < ITEMS_COUNT) {
+            snprintf(game->item_names[id], ITEM_NAME_SIZE, "%s", name);
+            loaded[id] = 1;
+        }
+    }
+    fclose(file);
+
+    for (int i = 1; i < ITEMS_COUNT; i++) {
+        if (!loaded[i]) {
+            printf("[Внимание] Для ID %d оставлено название по умолчанию.\n", i);
+        }
+    }
+}
+
 void show_time(const GameState *game) {
     printf("День %d - %02d:00\n", game->day, game->hour);
 }
@@ -61,7 +114,7 @@ void time_menu(GameState *game) {
     while (1) {
         printf("\n--- РЕЖИМ ДНЯ ---\n");
         printf("[1] Посмотреть на часы\n");
-        printf("[2] Пропустить время\n");
+        printf("[2] Проработать\n");
         printf("[3] Лечь спать\n");
         printf("[0] Назад\n");
 
@@ -77,12 +130,13 @@ void time_menu(GameState *game) {
             show_time(game);
         } else if (choice == 2) {
             int hours;
-            int until_night = (NIGHT_HOUR - game->hour + 24) % 24;
 
-            if (until_night == 0) {
-                printf("Уже 02:00. Чтобы продолжить, нужно лечь спать.\n");
+            if (game->hour >= NIGHT_HOUR && game->hour < MORNING_HOUR) {
+                printf("Сейчас ночь. Чтобы продолжить, нужно лечь спать.\n");
                 continue;
             }
+
+            int until_night = (NIGHT_HOUR - game->hour + 24) % 24;
 
             if (!read_int("На сколько часов пропустить время: ", &hours)) {
                 continue;

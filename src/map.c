@@ -18,7 +18,6 @@
 #define RUNE_PERCENT 5
 #define PERCENT_TOTAL 100
 #define INPUT_LINE_LEN 32
-#define NIGHT_HOUR 2
 #define GOLD_MULTIPLIER 10
 
 static int random_range(int min, int max) {
@@ -287,8 +286,8 @@ void adventure(GameState *game) {
         printf("Нельзя отправиться в поход без выносливости.\n");
         return;
     }
-    if (game->hour >= NIGHT_HOUR) {
-        printf("Уже 02:00 или позже. Сначала нужно поспать.\n");
+    if (game->hour >= NIGHT_HOUR && game->hour < MORNING_HOUR) {
+        printf("Сейчас ночное время (02:00–07:59). Сначала нужно поспать.\n");
         return;
     }
 
