@@ -337,7 +337,8 @@ void adventure(GameState *game) {
             int next_floor = game->map->floor + 1;
             game->player->gold += GOLD_MULTIPLIER * next_floor;
 
-            if (game->player->stamina <= 0 || game->hour >= NIGHT_HOUR) {
+            if (game->player->stamina <= 0 ||
+                (game->hour >= NIGHT_HOUR && game->hour < MORNING_HOUR)) {
                 emergency_return(game);
                 return;
             }
