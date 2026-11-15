@@ -8,6 +8,7 @@
 #define START_STAMINA 50
 #define START_GOLD 100
 #define FIRST_HOUSE_UPGRADE_COST 100
+#define START_HOUR 8
 
 static void clear_input_line(void) {
     int symbol;
@@ -118,4 +119,40 @@ void show_player_card(const GameState *game) {
             printf("Слот %2d: [ID: %d] Неизвестный предмет\n", i, id);
         }
     }
+}
+
+void rest_player(GameState *game) {
+    Player *player = game->player;
+    int bonus = 0;
+
+    game->day++;
+    game->hour = START_HOUR;
+
+    if (player == NULL) {
+        printf("Новый день: %d, %02d:00.\n", game->day, game->hour);
+        return;
+    }
+
+    player->hp = player->max_hp;
+
+    if (player->farmhouse.level == HOUSE_TENT) {
+        player->stamina = player->max_stamina * 70 / 100;
+    } else if (player->farmhouse.level == HOUSE_CABIN) {
+        player->stamina = player->max_stamina;
+    } else if (player->farmhouse.level == HOUSE_HOME) {
+        bonus = 15;
+        player->stamina = player->max_stamina + bonus;
+    } else {
+        bonus = 30;
+        player->stamina = player->max_stamina + bonus;
+    }
+
+    printf("Здоровье восстановлено.\n");
+    printf("Выносливость: %d/%d", player->stamina, player->max_stamina);
+
+    if (bonus > 0) {
+        printf(" (+%d бодрости)", bonus);
+    }
+
+    printf(".\nНовый день: %d, %02d:00.\n", game->day, game->hour);
 }
