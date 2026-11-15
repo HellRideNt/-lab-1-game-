@@ -13,6 +13,15 @@ typedef enum {
     HOUSE_MANSION
 } HouseLevel;
 
+typedef enum {
+    DIR_NONE = 0,
+    DIR_UP,
+    DIR_DOWN,
+    DIR_LEFT,
+    DIR_RIGHT,
+    DIR_QUIT
+} Direction;
+
 typedef struct {
     HouseLevel level;
     int upgrade_cost;
